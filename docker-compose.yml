@@ -1,0 +1,50 @@
+name: projectName
+services:
+  db:
+    image: mariadb:latest
+    volumes:
+      - ./data:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=secret
+      - MYSQL_DATABASE=wordpress
+      - MYSQL_USER=manager
+      - MYSQL_PASSWORD=secret
+  web:
+    image: wordpress:latest
+    depends_on:
+      - db
+    volumes:
+      - ./:/var/www/html
+      - ./uploads.ini:/usr/local/etc/php/conf.d/uploads.ini
+    environment:
+      - WORDPRESS_DB_USER=manager
+      - WORDPRESS_DB_PASSWORD=secret
+      - WORDPRESS_DB_HOST=db
+      - WORDPRESS_TABLE_PREFIX=wpilhbl_ # Change this to a unique value
+    ports:
+      - 8541:80 # Change this to a unique value 8xxx:80
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    depends_on:
+      - db
+    ports:
+      - 8199:80 # Change this to a unique value 8xxx:80
+    environment:
+      - PMA_HOST=db
+      - MYSQL_USER=root
+      - MYSQL_ROOT_PASSWORD=secret
+      - UPLOAD_LIMIT=1G
+  backup:
+    image: mysql:5.7    
+    volumes:
+      - ./data:/var/lib/mysql
+      - ./backup:/backup    
+    command: >
+      bash -c "mysqldump -u root -psecret --host db wordpress > /backup/backup.sql &&
+      echo 'Database backup completed successfully' ||
+      echo 'Database backup failed'"
+    depends_on:
+      - db
+volumes:
+  data:
+  backup:
